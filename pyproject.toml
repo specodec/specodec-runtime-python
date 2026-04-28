@@ -1,0 +1,9 @@
+[project]
+name = "specodec"
+version = "0.0.1"
+description = "Specodec codec runtime for Python"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
