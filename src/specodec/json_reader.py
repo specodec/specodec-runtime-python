@@ -14,6 +14,8 @@ class JsonReader:
     def __init__(self, data: bytes) -> None:
         self._src = data.decode("utf-8")
         self._pos = 0
+        self._first_field: list[bool] = []
+        self._first_elem: list[bool] = []
 
     @property
     def pos(self) -> int:
@@ -236,37 +238,49 @@ class JsonReader:
 
     def begin_object(self) -> None:
         self._expect('{')
+        self._first_field.append(True)
 
     def has_next_field(self) -> bool:
         ch = self._peek()
-        return ch != '}'
+        if ch == '}':
+            self._first_field.pop()
+            return False
+        if not self._first_field[-1]:
+            if ch != ',':
+                raise SCodecError("internal", f"json: expected ',' or '}}', got '{ch}'")
+            self._pos += 1
+        else:
+            self._first_field[-1] = False
+        return True
 
     def read_field_name(self) -> str:
-        return self._parse_string()
-
-    def next_field_separator(self) -> None:
-        ch = self._peek()
-        if ch == ',':
+        key = self._parse_string()
+        self._ws()
+        if self._pos < len(self._src) and self._src[self._pos] == ':':
             self._pos += 1
-        elif ch != '}':
-            raise SCodecError("internal", f"json: expected ',' or '}}, got '{ch}'")
+        else:
+            raise SCodecError("internal", f"json: expected ':' after field name '{key}'")
+        return key
 
     def end_object(self) -> None:
         self._expect('}')
 
     def begin_array(self) -> None:
         self._expect('[')
+        self._first_elem.append(True)
 
     def has_next_element(self) -> bool:
         ch = self._peek()
-        return ch != ']'
-
-    def next_element_separator(self) -> None:
-        ch = self._peek()
-        if ch == ',':
+        if ch == ']':
+            self._first_elem.pop()
+            return False
+        if not self._first_elem[-1]:
+            if ch != ',':
+                raise SCodecError("internal", f"json: expected ',' or ']', got '{ch}'")
             self._pos += 1
-        elif ch != ']':
-            raise SCodecError("internal", f"json: expected ',' or ']', got '{ch}'")
+        else:
+            self._first_elem[-1] = False
+        return True
 
     def end_array(self) -> None:
         self._expect(']')
@@ -294,22 +308,13 @@ class JsonReader:
             raise SCodecError("internal", "json: unterminated string in skip")
         elif ch == '{':
             self.begin_object()
-            first = True
             while self.has_next_field():
-                if not first:
-                    self.next_field_separator()
-                first = False
                 self.read_field_name()
-                self._expect(':')
                 self.skip()
             self.end_object()
         elif ch == '[':
             self.begin_array()
-            first = True
             while self.has_next_element():
-                if not first:
-                    self.next_element_separator()
-                first = False
                 self.skip()
             self.end_array()
         elif ch == 't':
