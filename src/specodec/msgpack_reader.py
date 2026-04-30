@@ -37,6 +37,11 @@ class MsgPackReader:
         self._pos += 4
         return v
 
+    def _read_u64(self) -> int:
+        v = struct.unpack_from(">Q", self._buf, self._pos)[0]
+        self._pos += 8
+        return v
+
     def _read_i16(self) -> int:
         v = struct.unpack_from(">h", self._buf, self._pos)[0]
         self._pos += 2
@@ -45,6 +50,11 @@ class MsgPackReader:
     def _read_i32(self) -> int:
         v = struct.unpack_from(">i", self._buf, self._pos)[0]
         self._pos += 4
+        return v
+
+    def _read_i64(self) -> int:
+        v = struct.unpack_from(">q", self._buf, self._pos)[0]
+        self._pos += 8
         return v
 
     def read_map_header(self) -> int:
@@ -96,11 +106,17 @@ class MsgPackReader:
         if b == 0xCE:
             return self._read_u32()
         if b == 0xD0:
-            return struct.unpack_from(">b", self._buf, self._pos - 0)[0]
+            v = struct.unpack_from(">b", self._buf, self._pos)[0]
+            self._pos += 1
+            return v
         if b == 0xD1:
             return self._read_i16()
         if b == 0xD2:
             return self._read_i32()
+        if b == 0xD3:
+            return self._read_i64()
+        if b == 0xCF:
+            return self._read_u64()
         raise SCodecError("internal", f"msgpack: expected int, got 0x{b:02X}")
 
     def read_int32(self) -> int: return int(self.read_int())
@@ -113,9 +129,7 @@ class MsgPackReader:
         if b == 0xCD: return self._read_u16()
         if b == 0xCE: return self._read_u32()
         if b == 0xCF:
-            v = struct.unpack_from(">Q", self._buf, self._pos)[0]
-            self._pos += 8
-            return v
+            return self._read_u64()
         raise SCodecError("internal", f"msgpack: expected uint64, got 0x{b:02X}")
 
     def read_float(self) -> float:
@@ -128,6 +142,26 @@ class MsgPackReader:
             v = struct.unpack_from(">d", self._buf, self._pos)[0]
             self._pos += 8
             return v
+        if b <= 0x7F:
+            return float(b)
+        if b >= 0xE0:
+            return float(b - 0x100)
+        if b == 0xCC:
+            return float(self._read_byte())
+        if b == 0xCD:
+            return float(self._read_u16())
+        if b == 0xCE:
+            return float(self._read_u32())
+        if b == 0xD0:
+            v = struct.unpack_from(">b", self._buf, self._pos)[0]
+            self._pos += 1
+            return float(v)
+        if b == 0xD1:
+            return float(self._read_i16())
+        if b == 0xD2:
+            return float(self._read_i32())
+        if b == 0xD3:
+            return float(self._read_i64())
         raise SCodecError("internal", f"msgpack: expected float, got 0x{b:02X}")
 
     def read_float32(self) -> float: return float(self.read_float())

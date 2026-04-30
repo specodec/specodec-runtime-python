@@ -1,0 +1,17 @@
+FROM dhi.io/python:3-alpine3.23-dev AS builder
+WORKDIR /app
+ARG HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy
+ENV http_proxy=${HTTP_PROXY} https_proxy=${HTTPS_PROXY} HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} ALL_PROXY=${ALL_PROXY}
+COPY src/ src/
+RUN python -m py_compile src/specodec/__init__.py && \
+    python -m py_compile src/specodec/msgpack_reader.py && \
+    python -m py_compile src/specodec/msgpack_writer.py && \
+    python -m py_compile src/specodec/json_reader.py && \
+    python -m py_compile src/specodec/json_writer.py && \
+    python -m py_compile src/specodec/spec_reader.py && \
+    python -m py_compile src/specodec/spec_codec.py && \
+    python -m compileall src/specodec/ && \
+    echo "OK"
+
+FROM scratch
+COPY --from=builder /app/src/ /out/

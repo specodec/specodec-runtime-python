@@ -53,17 +53,24 @@ class JsonWriter:
     def write_uint64(self, value: int) -> None:
         self._parts.append('"' + str(value) + '"')
 
+    @staticmethod
+    def _fmt_float(value: float) -> str:
+        s = repr(value)
+        if s.endswith(".0"):
+            s = s[:-2]
+        return s
+
     def write_float32(self, value: float) -> None:
         v = struct.pack(">f", value)
         fv = struct.unpack(">f", v)[0]
         if math.isnan(fv) or math.isinf(fv):
             raise ValueError("float32: NaN/Infinity not valid JSON")
-        self._parts.append(repr(fv))
+        self._parts.append(self._fmt_float(fv))
 
     def write_float64(self, value: float) -> None:
         if math.isnan(value) or math.isinf(value):
             raise ValueError("float64: NaN/Infinity not valid JSON")
-        self._parts.append(repr(value))
+        self._parts.append(self._fmt_float(value))
 
     def write_null(self) -> None:
         self._parts.append("null")
@@ -89,7 +96,7 @@ class JsonWriter:
         self._first_item.pop()
         self._parts.append("}")
 
-    def begin_array(self) -> None:
+    def begin_array(self, _size: int | None = None) -> None:
         self._parts.append("[")
         self._first_item.append(True)
 

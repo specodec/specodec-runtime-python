@@ -116,6 +116,7 @@ class JsonReader:
         raise SCodecError("internal", "json: unterminated string")
 
     def _parse_number_raw(self) -> str:
+        self._ws()
         start = self._pos
         if self._pos < len(self._src) and self._src[self._pos] == '-':
             self._pos += 1
@@ -260,6 +261,7 @@ class JsonReader:
             self._pos += 1
         else:
             raise SCodecError("internal", f"json: expected ':' after field name '{key}'")
+        self._ws()
         return key
 
     def end_object(self) -> None:

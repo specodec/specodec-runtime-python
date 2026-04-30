@@ -176,5 +176,8 @@ class MsgPackWriter:
     def end_array(self) -> None:
         pass
 
+    def write_enum(self, value: str) -> None:
+        self.write_string(value)
+
     def to_bytes(self) -> bytes:
         return bytes(self._buf)
