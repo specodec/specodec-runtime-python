@@ -132,5 +132,8 @@ class GronWriter:
         info = self._nesting.pop()
         self._segments = self._segments[: info["depth"]]
 
+    def write_enum(self, value: str) -> None:
+        self._emit(f'"{self._escape(value)}"')
+
     def to_bytes(self) -> bytes:
         return "\n".join(self._lines).encode("utf-8") + b"\n"

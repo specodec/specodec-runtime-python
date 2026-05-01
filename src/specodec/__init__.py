@@ -5,11 +5,14 @@ from .msgpack_reader import MsgPackReader
 from .gron_writer import GronWriter
 from .gron_reader import GronReader
 from .spec_reader import SpecReader
-from .spec_codec import SpecCodec, dispatch, respond
+from .spec_writer import SpecWriter
+from .spec_codec import SpecCodec, FormatEntry, FormatRegistry, RespondResult, default_registry, dispatch, respond
 
 __all__ = [
     "JsonWriter", "JsonReader", "SCodecError",
     "MsgPackWriter", "MsgPackReader",
     "GronWriter", "GronReader",
-    "SpecReader", "SpecCodec", "dispatch", "respond",
+    "SpecReader", "SpecWriter",
+    "SpecCodec", "FormatEntry", "FormatRegistry", "RespondResult",
+    "default_registry", "dispatch", "respond",
 ]

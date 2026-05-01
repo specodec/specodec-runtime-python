@@ -81,7 +81,7 @@ class JsonWriter:
     def write_enum(self, value: str) -> None:
         self._parts.append('"' + self._escape(value) + '"')
 
-    def begin_object(self) -> None:
+    def begin_object(self, _field_count: int = 0) -> None:
         self._parts.append("{")
         self._first_item.append(True)
 
