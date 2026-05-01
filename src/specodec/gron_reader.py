@@ -105,9 +105,6 @@ class GronReader:
         pfx = self._ctx[-1]["prefix"] + "."
         return self._lines[self._cursor][0][len(pfx):]
 
-    def next_field_separator(self):
-        pass
-
     def end_object(self):
         self._ctx.pop()
 
@@ -124,8 +121,6 @@ class GronReader:
         p = self._lines[self._cursor][0]
         return p == exp or p.startswith(exp + ".") or p.startswith(exp + "[")
 
-    def next_element_separator(self):
-        pass
 
     def next_element(self):
         self._ctx[-1]["index"] += 1
