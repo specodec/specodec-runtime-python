@@ -26,7 +26,7 @@ class SpecCodec(Generic[T]):
 # ---------------------------------------------------------------------------
 @dataclass
 class FormatEntry:
-    content_type: str
+    name: str                              # e.g. "json", "msgpack", "gron"
     new_writer: Callable[[], SpecWriter]
     new_reader: Callable[[bytes], SpecReader]
 
@@ -42,10 +42,9 @@ class FormatRegistry:
         self._entries.append(entry)
         return self
 
-    def match(self, content_type: str) -> FormatEntry:
+    def match(self, format: str) -> FormatEntry:
         for e in self._entries:
-            sub = e.content_type.split("/", 1)[-1]
-            if sub in content_type:
+            if e.name in format:
                 return e
         return self._entries[0]
 
@@ -54,31 +53,31 @@ class FormatRegistry:
 # Default registry
 # ---------------------------------------------------------------------------
 default_registry = FormatRegistry()
-default_registry.register(FormatEntry("application/json",    JsonWriter,               JsonReader))
-default_registry.register(FormatEntry("application/msgpack", MsgPackWriter,             MsgPackReader))
-default_registry.register(FormatEntry("application/gron",    GronWriter,                GronReader))
+default_registry.register(FormatEntry("json",    JsonWriter,    JsonReader))
+default_registry.register(FormatEntry("msgpack", MsgPackWriter, MsgPackReader))
+default_registry.register(FormatEntry("gron",    GronWriter,    GronReader))
 
 
 # ---------------------------------------------------------------------------
 # dispatch / respond
 # ---------------------------------------------------------------------------
-def dispatch(codec: SpecCodec[T], body: bytes, content_type: str,
+def dispatch(codec: SpecCodec[T], body: bytes, format: str,
              registry: FormatRegistry | None = None) -> T:
     reg = registry or default_registry
-    fmt = reg.match(content_type)
+    fmt = reg.match(format)
     return codec.decode(fmt.new_reader(body))
 
 
 @dataclass
 class RespondResult:
     body: bytes
-    content_type: str
+    name: str   # format name: "json" | "msgpack" | "gron"
 
 
-def respond(codec: SpecCodec[T], obj: T, accept: str,
+def respond(codec: SpecCodec[T], obj: T, format: str,
             registry: FormatRegistry | None = None) -> RespondResult:
     reg = registry or default_registry
-    fmt = reg.match(accept)
+    fmt = reg.match(format)
     w = fmt.new_writer()
     codec.encode(w, obj)
-    return RespondResult(body=w.to_bytes(), content_type=fmt.content_type)
+    return RespondResult(body=w.to_bytes(), name=fmt.name)
