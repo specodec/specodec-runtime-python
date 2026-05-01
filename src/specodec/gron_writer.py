@@ -1,5 +1,6 @@
 from __future__ import annotations
 import struct
+from specodec.float_fmt import fmt_float32
 
 
 class GronWriter:
@@ -71,16 +72,10 @@ class GronWriter:
         self._emit(f'"{value}"')
 
     def write_float32(self, value: float):
-        if value != value or abs(value) == float("inf"):
-            raise ValueError("NaN/Infinity")
         import math
-        if math.copysign(1.0, value) < 0 and value == 0.0:
-            self._emit("-0")
-        else:
-            s = repr(value)
-            if s.endswith(".0"):
-                s = s[:-2]
-            self._emit(s)
+        if math.isnan(value) or math.isinf(value):
+            raise ValueError("float32: NaN/Infinity not valid")
+        self._emit(fmt_float32(value))
 
     def write_float64(self, value: float):
         if value != value or abs(value) == float("inf"):
