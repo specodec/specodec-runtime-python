@@ -44,7 +44,7 @@ class FormatRegistry:
 
     def match(self, format: str) -> FormatEntry:
         for e in self._entries:
-            if e.name in format:
+            if e.name == format:
                 return e
         return self._entries[0]
 
