@@ -164,7 +164,9 @@ class MsgPackReader:
             return float(self._read_i64())
         raise SCodecError("internal", f"msgpack: expected float, got 0x{b:02X}")
 
-    def read_float32(self) -> float: return float(self.read_float())
+    def read_float32(self) -> float:
+        v = self.read_float()
+        return struct.unpack('f', struct.pack('f', v))[0]
     def read_float64(self) -> float: return float(self.read_float())
 
     def read_bytes(self) -> bytes:

@@ -214,7 +214,8 @@ class JsonReader:
     def read_float32(self) -> float:
         raw = self._parse_number_raw()
         try:
-            return float(raw)
+            v = float(raw)
+            return struct.unpack('f', struct.pack('f', v))[0]
         except ValueError:
             raise SCodecError("internal", f"json: invalid float32: {raw}")
 

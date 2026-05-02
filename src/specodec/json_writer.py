@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import base64
-import math
 import struct
-from specodec.float_fmt import fmt_float32
+
+from .float_fmt import format_float32, format_float64
 
 
 class JsonWriter:
@@ -54,22 +54,16 @@ class JsonWriter:
     def write_uint64(self, value: int) -> None:
         self._parts.append('"' + str(value) + '"')
 
-    @staticmethod
-    def _fmt_float(value: float) -> str:
-        s = repr(value)
-        if s.endswith(".0"):
-            s = s[:-2]
-        return s
-
     def write_float32(self, value: float) -> None:
-        if math.isnan(value) or math.isinf(value):
+        f32 = struct.unpack("f", struct.pack("f", value))[0]
+        if f32 != f32 or abs(f32) == float("inf"):
             raise ValueError("float32: NaN/Infinity not valid JSON")
-        self._parts.append(fmt_float32(value))
+        self._parts.append(format_float32(value))
 
     def write_float64(self, value: float) -> None:
-        if math.isnan(value) or math.isinf(value):
+        if value != value or abs(value) == float("inf"):
             raise ValueError("float64: NaN/Infinity not valid JSON")
-        self._parts.append(self._fmt_float(value))
+        self._parts.append(format_float64(value))
 
     def write_null(self) -> None:
         self._parts.append("null")

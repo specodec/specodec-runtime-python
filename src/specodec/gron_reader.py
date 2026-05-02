@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import struct
+
 
 class GronReader:
     def __init__(self, data: bytes):
@@ -71,8 +73,11 @@ class GronReader:
 
     def read_float32(self) -> float:
         v = self._lines[self._cursor][1]; self._cursor += 1
-        if v == "-0":
-            return -0.0
+        f = float(v)
+        return struct.unpack('f', struct.pack('f', f))[0]
+
+    def read_float64(self) -> float:
+        v = self._lines[self._cursor][1]; self._cursor += 1
         return float(v)
 
     def read_float64(self) -> float:
