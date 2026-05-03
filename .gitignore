@@ -3,4 +3,4 @@ __pycache__/
 *.pyo
 dist/
 build/
-*.egg-info/
+*.egg-info/.pnpm-store/

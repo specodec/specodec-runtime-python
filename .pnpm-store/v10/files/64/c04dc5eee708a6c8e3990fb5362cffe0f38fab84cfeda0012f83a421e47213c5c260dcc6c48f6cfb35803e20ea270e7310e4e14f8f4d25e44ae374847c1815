@@ -1,0 +1,38 @@
+{
+  "name": "@specodec/typespec-emitter-python",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typespec": {
+    "emitter": true,
+    "options": {
+      "@specodec/typespec-emitter-python": {
+        "type": "object",
+        "properties": {
+          "emitter-output-dir": {
+            "type": "string"
+          },
+          "ignore-reserved-keywords": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "emitter-output-dir"
+        ]
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@specodec/typespec-emitter-core": "0.1.0"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "1.11.0",
+    "@typespec/http": "1.11.0",
+    "typescript": "^5.8.0"
+  }
+}

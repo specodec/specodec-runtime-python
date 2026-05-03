@@ -1,7 +1,8 @@
-FROM dhi.io/python:3-alpine3.23-dev AS builder
+FROM dev:all AS builder
 WORKDIR /app
 ARG HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy
 ENV http_proxy=${HTTP_PROXY} https_proxy=${HTTPS_PROXY} HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} ALL_PROXY=${ALL_PROXY}
+ENV PATH="/root/.local/share/mise/shims:$PATH"
 COPY src/ src/
 RUN python -m py_compile src/specodec/__init__.py && \
     python -m py_compile src/specodec/msgpack_reader.py && \
