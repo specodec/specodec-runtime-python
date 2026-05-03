@@ -56,14 +56,24 @@ class JsonWriter:
 
     def write_float32(self, value: float) -> None:
         f32 = struct.unpack("f", struct.pack("f", value))[0]
-        if f32 != f32 or abs(f32) == float("inf"):
-            raise ValueError("float32: NaN/Infinity not valid JSON")
-        self._parts.append(format_float32(value))
+        if f32 != f32:
+            self._parts.append('"NaN"')
+        elif f32 == float("inf"):
+            self._parts.append('"Infinity"')
+        elif f32 == float("-inf"):
+            self._parts.append('"-Infinity"')
+        else:
+            self._parts.append(format_float32(value))
 
     def write_float64(self, value: float) -> None:
-        if value != value or abs(value) == float("inf"):
-            raise ValueError("float64: NaN/Infinity not valid JSON")
-        self._parts.append(format_float64(value))
+        if value != value:
+            self._parts.append('"NaN"')
+        elif value == float("inf"):
+            self._parts.append('"Infinity"')
+        elif value == float("-inf"):
+            self._parts.append('"-Infinity"')
+        else:
+            self._parts.append(format_float64(value))
 
     def write_null(self) -> None:
         self._parts.append("null")

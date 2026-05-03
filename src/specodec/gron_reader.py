@@ -73,11 +73,23 @@ class GronReader:
 
     def read_float32(self) -> float:
         v = self._lines[self._cursor][1]; self._cursor += 1
+        if v == '"NaN"':
+            return float("nan")
+        if v == '"Infinity"':
+            return float("inf")
+        if v == '"-Infinity"':
+            return float("-inf")
         f = float(v)
         return struct.unpack('f', struct.pack('f', f))[0]
 
     def read_float64(self) -> float:
         v = self._lines[self._cursor][1]; self._cursor += 1
+        if v == '"NaN"':
+            return float("nan")
+        if v == '"Infinity"':
+            return float("inf")
+        if v == '"-Infinity"':
+            return float("-inf")
         return float(v)
 
     def read_float64(self) -> float:
@@ -124,11 +136,10 @@ class GronReader:
         ni = arr["index"] + 1
         exp = f"{arr['prefix']}[{ni}]"
         p = self._lines[self._cursor][0]
-        return p == exp or p.startswith(exp + ".") or p.startswith(exp + "[")
-
-
-    def next_element(self):
-        self._ctx[-1]["index"] += 1
+        has_next = p == exp or p.startswith(exp + ".") or p.startswith(exp + "[")
+        if has_next:
+            arr["index"] = ni
+        return has_next
 
     def end_array(self):
         self._ctx.pop()

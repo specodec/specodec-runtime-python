@@ -212,6 +212,20 @@ class JsonReader:
             raise SCodecError("internal", f"json: invalid uint64: {raw}")
 
     def read_float32(self) -> float:
+        ch = self._peek()
+        if ch == '"':
+            s = self._parse_string()
+            if s == "NaN":
+                return float("nan")
+            if s == "Infinity":
+                return float("inf")
+            if s == "-Infinity":
+                return float("-inf")
+            try:
+                v = float(s)
+                return struct.unpack('f', struct.pack('f', v))[0]
+            except ValueError:
+                raise SCodecError("internal", f"json: invalid float32: {s}")
         raw = self._parse_number_raw()
         try:
             v = float(raw)
@@ -220,6 +234,19 @@ class JsonReader:
             raise SCodecError("internal", f"json: invalid float32: {raw}")
 
     def read_float64(self) -> float:
+        ch = self._peek()
+        if ch == '"':
+            s = self._parse_string()
+            if s == "NaN":
+                return float("nan")
+            if s == "Infinity":
+                return float("inf")
+            if s == "-Infinity":
+                return float("-inf")
+            try:
+                return float(s)
+            except ValueError:
+                raise SCodecError("internal", f"json: invalid float64: {s}")
         raw = self._parse_number_raw()
         try:
             return float(raw)

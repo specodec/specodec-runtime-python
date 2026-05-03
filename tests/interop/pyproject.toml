@@ -1,0 +1,11 @@
+[project]
+name = "specodec-interop-python"
+version = "1.0.0"
+requires-python = ">=3.10"
+dependencies = [
+  "specodec @ git+https://github.com/specodec/specodec-runtime-python",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

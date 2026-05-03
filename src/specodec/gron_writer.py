@@ -74,14 +74,24 @@ class GronWriter:
 
     def write_float32(self, value: float):
         f32 = struct.unpack("f", struct.pack("f", value))[0]
-        if f32 != f32 or abs(f32) == float("inf"):
-            raise ValueError("float32: NaN/Infinity not valid")
-        self._emit(format_float32(value))
+        if f32 != f32:
+            self._emit('"NaN"')
+        elif f32 == float("inf"):
+            self._emit('"Infinity"')
+        elif f32 == float("-inf"):
+            self._emit('"-Infinity"')
+        else:
+            self._emit(format_float32(value))
 
     def write_float64(self, value: float):
-        if value != value or abs(value) == float("inf"):
-            raise ValueError("float64: NaN/Infinity not valid")
-        self._emit(format_float64(value))
+        if value != value:
+            self._emit('"NaN"')
+        elif value == float("inf"):
+            self._emit('"Infinity"')
+        elif value == float("-inf"):
+            self._emit('"-Infinity"')
+        else:
+            self._emit(format_float64(value))
 
     def write_null(self):
         self._emit("null")
