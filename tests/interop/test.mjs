@@ -53,8 +53,8 @@ console.log("\n=== Step 5: Run tests ===");
 if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true });
 ensure(OUT_DIR);
 
-// Install runtime from git
-run(`cd ${__dir} && pip install git+https://github.com/specodec/specodec-runtime-python --break-system-packages`);
+// Install runtime from local source
+run(`cd ${__dir} && pip install -e ${LANG_ROOT} --break-system-packages`);
 
 run(`cd ${__dir} && VEC_DIR=${VEC_DIR} OUT_DIR=${OUT_DIR} python src/run_emit.py`);
 
