@@ -1,5 +1,5 @@
 [project]
-name = "specodec"
+name = "specodec-runtime-python"
 version = "0.0.2"
 description = "Specodec codec runtime for Python"
 requires-python = ">=3.10"
