@@ -54,7 +54,7 @@ ensure(OUT_DIR);
 // Install runtime from local source
 run(`cd ${__dir} && pip install -e ${LANG_ROOT} --break-system-packages`);
 
-try { run(`cd ${__dir} && VEC_DIR=${VEC_DIR} OUT_DIR=${OUT_DIR} python src/run_emit.py`); } catch (e) { console.log("Python tests completed (some failures expected)"); }
+try { run(`cd ${__dir} && VEC_DIR=${VEC_DIR} OUT_DIR=${OUT_DIR} python emit/main.py`); } catch (e) { console.log("Python tests completed (some failures expected)"); }
 
 console.log('\n=== Step 6: Compare output ===');
 const manifest = JSON.parse(readFileSync(join(VEC_DIR, 'manifest.json'), 'utf-8'));

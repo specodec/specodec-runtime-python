@@ -10,156 +10,219 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
 
 const models = manifest.testModels;
 const scalars = manifest.scalars;
+const modelNamespaces = manifest.modelNamespaces || {};
 
-function getReadMethod(type) {
+function readMethod(type) {
   const map = {
-    "int32": "read_int32",
-    "int64": "read_int64",
-    "uint32": "read_uint32",
-    "uint64": "read_uint64",
-    "float32": "read_float32",
-    "float64": "read_float64",
-    "string": "read_string",
-    "bytes": "read_bytes",
-    "bool": "read_bool",
+    "int32": "read_int32", "int64": "read_int64",
+    "uint32": "read_uint32", "uint64": "read_uint64",
+    "float32": "read_float32", "float64": "read_float64",
+    "string": "read_string", "bytes": "read_bytes", "bool": "read_bool",
   };
   return map[type] || "read_int32";
 }
 
-function getWriteMethod(type) {
+function writeMethod(type) {
   const map = {
-    "int32": "write_int32",
-    "int64": "write_int64",
-    "uint32": "write_uint32",
-    "uint64": "write_uint64",
-    "float32": "write_float32",
-    "float64": "write_float64",
-    "string": "write_string",
-    "bytes": "write_bytes",
-    "bool": "write_bool",
+    "int32": "write_int32", "int64": "write_int64",
+    "uint32": "write_uint32", "uint64": "write_uint64",
+    "float32": "write_float32", "float64": "write_float64",
+    "string": "write_string", "bytes": "write_bytes", "bool": "write_bool",
   };
   return map[type] || "write_int32";
 }
 
 function toSnakeCase(name) {
-  let snake = name.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
-  snake = snake.replace(/\./g, '_').replace(/-/g, '_');
-  return snake;
+  let s = name.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+  return s.replace(/\./g, '_').replace(/-/g, '_');
 }
 
-let scalarFuncs = '';
-let scalarCalls = '';
-for (const [name, info] of Object.entries(scalars)) {
+// Build scalar helper generators
+function scalarFunc(name, info) {
   const snake = toSnakeCase(name);
-  const funcName = `test_scalar_${snake}`;
-  scalarFuncs += `
-def ${funcName}():
+  return `
+def test_scalar_${snake}(vec, out):
     try:
-        b = open(os.path.join(VEC, "scalars/${name}.mp"), "rb").read()
+        b = open(os.path.join(vec, "scalars/${name}.mp"), "rb").read()
         r = MsgPackReader(b)
-        val = r.${getReadMethod(info.type)}()
+        val = r.${readMethod(info.type)}()
         w = MsgPackWriter()
-        w.${getWriteMethod(info.type)}(val)
-        open(os.path.join(OUT, "scalars/${name}.mp"), "wb").write(w.to_bytes())
+        w.${writeMethod(info.type)}(val)
+        open(os.path.join(out, "scalars/${name}.mp"), "wb").write(w.to_bytes())
         return 1, 0
     except Exception as e:
         print("FAIL ${name} mp: " + str(e))
-        return 0, 1
-`;
-  scalarCalls += `p, f = ${funcName}(); passed += p; failed += f\n`;
+        return 0, 1`;
 }
 
-let modelFuncs = '';
-let modelCalls = '';
-for (const model of models) {
+function scalarCall(name) {
+  const snake = toSnakeCase(name);
+  return `p, f = test_scalar_${snake}(vec, out); passed += p; failed += f`;
+}
+
+function modelFunc(model) {
   const snake = toSnakeCase(model);
-  const funcName = `test_model_${snake}`;
-  modelFuncs += `
-def ${funcName}():
+  return `
+def test_model_${snake}(vec, out):
     passed = 0
     failed = 0
     codec = ${model}Codec
     try:
-        b = open(os.path.join(VEC, "${model}.msgpack"), "rb").read()
+        b = open(os.path.join(vec, "${model}.msgpack"), "rb").read()
         obj = codec.decode(MsgPackReader(b))
         w = MsgPackWriter()
         codec.encode(w, obj)
-        open(os.path.join(OUT, "${model}.msgpack"), "wb").write(w.to_bytes())
+        open(os.path.join(out, "${model}.msgpack"), "wb").write(w.to_bytes())
         passed += 1
     except Exception as e:
         print("FAIL ${model} mp: " + str(e))
         failed += 1
     try:
-        b = open(os.path.join(VEC, "${model}.json"), "rb").read()
+        b = open(os.path.join(vec, "${model}.json"), "rb").read()
         obj = codec.decode(JsonReader(b))
         w = JsonWriter()
         codec.encode(w, obj)
-        open(os.path.join(OUT, "${model}.json"), "wb").write(w.to_bytes())
+        open(os.path.join(out, "${model}.json"), "wb").write(w.to_bytes())
         passed += 1
     except Exception as e:
         print("FAIL ${model} json: " + str(e))
         failed += 1
     try:
-        b = open(os.path.join(VEC, "${model}.unformatted.json"), "rb").read()
+        b = open(os.path.join(vec, "${model}.unformatted.json"), "rb").read()
         obj = codec.decode(JsonReader(b))
         w = JsonWriter()
         codec.encode(w, obj)
-        open(os.path.join(OUT, "${model}.unformatted.json"), "wb").write(w.to_bytes())
+        open(os.path.join(out, "${model}.unformatted.json"), "wb").write(w.to_bytes())
         passed += 1
     except Exception as e:
         print("FAIL ${model} unformatted: " + str(e))
         failed += 1
     try:
-        b = open(os.path.join(VEC, "${model}.gron"), "rb").read()
+        b = open(os.path.join(vec, "${model}.gron"), "rb").read()
         obj = codec.decode(GronReader(b))
         w = GronWriter()
         codec.encode(w, obj)
-        open(os.path.join(OUT, "${model}.gron"), "wb").write(w.to_bytes())
+        open(os.path.join(out, "${model}.gron"), "wb").write(w.to_bytes())
         passed += 1
     except Exception as e:
         print("FAIL ${model} gron: " + str(e))
         failed += 1
-    return passed, failed
-`;
-  modelCalls += `p, f = ${funcName}(); passed += p; failed += f\n`;
+    return passed, failed`;
 }
 
-const code = `# Generated by generate_emit_runner.mjs. DO NOT EDIT.
+function modelCall(model) {
+  const snake = toSnakeCase(model);
+  return `p, f = test_model_${snake}(vec, out); passed += p; failed += f`;
+}
+
+// Group models by namespace
+const groups = {};
+for (const model of models) {
+  const ns = modelNamespaces[model] || [];
+  const key = ns.length > 0 ? ns.join("_") : "_root";
+  if (!groups[key]) groups[key] = [];
+  groups[key].push(model);
+}
+
+function nsFuncName(key) {
+  return key === "_root" ? "run_models" : "run_" + key;
+}
+
+function nsFileName(key) {
+  const n = key === "_root" ? "models" : key;
+  return "test_" + n + ".py";
+}
+
+const outDir = path.join(__dir, "emit");
+fs.mkdirSync(outDir, { recursive: true });
+
+const imports = `# Generated by generate_emit_runner.mjs. DO NOT EDIT.
 import os
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "generated"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from all_types_types import *
+from generated import *
 from specodec.msgpack_reader import MsgPackReader
 from specodec.msgpack_writer import MsgPackWriter
 from specodec.json_reader import JsonReader
 from specodec.json_writer import JsonWriter
 from specodec.gron_reader import GronReader
 from specodec.gron_writer import GronWriter
+`;
 
-VEC = os.environ["VEC_DIR"]
-OUT = os.environ["OUT_DIR"]
-os.makedirs(OUT, exist_ok=True)
-os.makedirs(os.path.join(OUT, "scalars"), exist_ok=True)
+const groupKeys = Object.keys(groups);
+const groupFuncNames = [];
 
-${scalarFuncs}
+for (const key of groupKeys) {
+  const funcName = nsFuncName(key);
+  groupFuncNames.push(funcName);
+  const groupModels = groups[key];
+  const isRoot = key === "_root";
 
-${modelFuncs}
+  let body = imports + "\n";
 
+  // Function definitions
+  if (isRoot) {
+    for (const [name, info] of Object.entries(scalars)) {
+      body += scalarFunc(name, info) + "\n";
+    }
+  }
+  for (const model of groupModels) {
+    body += modelFunc(model) + "\n";
+  }
+
+  // Runner function
+  body += `def ${funcName}():\n`;
+  body += `    passed = 0\n    failed = 0\n`;
+  body += `    vec = os.environ["VEC_DIR"]\n    out = os.environ["OUT_DIR"]\n`;
+  body += `    os.makedirs(out, exist_ok=True)\n    os.makedirs(os.path.join(out, "scalars"), exist_ok=True)\n`;
+
+  if (isRoot && Object.keys(scalars).length > 0) {
+    body += "\n    # Scalar tests\n";
+    for (const [name] of Object.entries(scalars)) {
+      body += "    " + scalarCall(name) + "\n";
+    }
+  }
+
+  body += `\n    # Object tests\n`;
+  for (const model of groupModels) {
+    body += "    " + modelCall(model) + "\n";
+  }
+
+  body += `    return passed, failed\n`;
+
+  const filePath = path.join(outDir, nsFileName(key));
+  fs.writeFileSync(filePath, body);
+  console.log(`Generated emit/${nsFileName(key)} with ${isRoot ? Object.keys(scalars).length + " scalars + " : ""}${groupModels.length} models`);
+}
+
+// Write main.py
+let mainSrc = `# Generated by generate_emit_runner.mjs. DO NOT EDIT.
+import os
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+
+`;
+
+for (const fn of groupFuncNames) {
+  const mod = fn.replace(/^run_/, "test_");
+  mainSrc += `from ${mod} import ${fn}\n`;
+}
+
+mainSrc += `
 passed = 0
 failed = 0
+`;
 
-# Scalar tests
-${scalarCalls}
+for (const fn of groupFuncNames) {
+  mainSrc += `p, f = ${fn}(); passed += p; failed += f\n`;
+}
 
-# Object tests
-${modelCalls}
-
+mainSrc += `
 print(f"emit-python: {passed} passed, {failed} failed")
 if failed > 0:
     sys.exit(1)
 `;
 
-const outFile = path.join(__dir, "src", "run_emit.py");
-fs.writeFileSync(outFile, code);
-console.log("Generated src/run_emit.py with " + models.length + " models + " + Object.keys(scalars).length + " scalars");
+fs.writeFileSync(path.join(outDir, "main.py"), mainSrc);
+console.log("Generated emit/main.py");
