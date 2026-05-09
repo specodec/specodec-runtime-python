@@ -1,3 +1,4 @@
+from .spec_undefined import SpecUndefined
 from .json_writer import JsonWriter
 from .json_reader import JsonReader, SCodecError
 from .msgpack_writer import MsgPackWriter
@@ -9,6 +10,7 @@ from .spec_writer import SpecWriter
 from .spec_codec import SpecCodec, FormatEntry, FormatRegistry, RespondResult, default_registry, dispatch, respond
 
 __all__ = [
+    "SpecUndefined",
     "JsonWriter", "JsonReader", "SCodecError",
     "MsgPackWriter", "MsgPackReader",
     "GronWriter", "GronReader",

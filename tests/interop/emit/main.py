@@ -3,15 +3,45 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
+from test_scalars import run_scalars
+from test_AllTypes import run_AllTypes
+from test_AllTypes_Scalars import run_AllTypes_Scalars
+from test_AllTypes_Opt import run_AllTypes_Opt
+from test_AllTypes_Pairs import run_AllTypes_Pairs
+from test_AllTypes_Many import run_AllTypes_Many
+from test_AllTypes_Arrays import run_AllTypes_Arrays
+from test_AllTypes_Nests import run_AllTypes_Nests
+from test_AllTypes_Mixed import run_AllTypes_Mixed
+from test_AllTypes_Recursive import run_AllTypes_Recursive
+from test_AllTypes_Wide import run_AllTypes_Wide
+from test_AllTypes_Edge import run_AllTypes_Edge
+from test_AllTypes_Extra import run_AllTypes_Extra
+from test_AllTypes_nested import run_AllTypes_nested
+from test_AllTypes_nested_deep import run_AllTypes_nested_deep
+from test_AllTypes_Enums import run_AllTypes_Enums
+from test_AllTypes_Unions import run_AllTypes_Unions
 from test_models import run_models
-from test_nested import run_nested
-from test_nested_deep import run_nested_deep
 
 passed = 0
 failed = 0
+p, f = run_scalars(); passed += p; failed += f
+p, f = run_AllTypes(); passed += p; failed += f
+p, f = run_AllTypes_Scalars(); passed += p; failed += f
+p, f = run_AllTypes_Opt(); passed += p; failed += f
+p, f = run_AllTypes_Pairs(); passed += p; failed += f
+p, f = run_AllTypes_Many(); passed += p; failed += f
+p, f = run_AllTypes_Arrays(); passed += p; failed += f
+p, f = run_AllTypes_Nests(); passed += p; failed += f
+p, f = run_AllTypes_Mixed(); passed += p; failed += f
+p, f = run_AllTypes_Recursive(); passed += p; failed += f
+p, f = run_AllTypes_Wide(); passed += p; failed += f
+p, f = run_AllTypes_Edge(); passed += p; failed += f
+p, f = run_AllTypes_Extra(); passed += p; failed += f
+p, f = run_AllTypes_nested(); passed += p; failed += f
+p, f = run_AllTypes_nested_deep(); passed += p; failed += f
+p, f = run_AllTypes_Enums(); passed += p; failed += f
+p, f = run_AllTypes_Unions(); passed += p; failed += f
 p, f = run_models(); passed += p; failed += f
-p, f = run_nested(); passed += p; failed += f
-p, f = run_nested_deep(); passed += p; failed += f
 
 print(f"emit-python: {passed} passed, {failed} failed")
 if failed > 0:

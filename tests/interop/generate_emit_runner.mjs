@@ -8,9 +8,12 @@ const VEC_DIR = process.env.VEC_DIR || path.join(__dir, ".tests-cache", "vectors
 const manifestPath = path.join(VEC_DIR, "manifest.json");
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
 
-const models = manifest.testModels;
+const models = [...(manifest.testModels || []), ...(manifest.testUnions || [])];
 const scalars = manifest.scalars;
 const modelNamespaces = manifest.modelNamespaces || {};
+const testUnions = new Set(manifest.testUnions || []);
+function isUnionTest(name) { return testUnions.has(name); }
+function unionNameOf(testName) { return testName.replace(/_[^_]+$/, ''); }
 
 function readMethod(type) {
   const map = {
@@ -62,11 +65,12 @@ function scalarCall(name) {
 
 function modelFunc(model) {
   const snake = toSnakeCase(model);
+  const codecName = isUnionTest(model) ? unionNameOf(model) : model;
   return `
 def test_model_${snake}(vec, out):
     passed = 0
     failed = 0
-    codec = ${model}Codec
+    codec = ${codecName}Codec
     try:
         b = open(os.path.join(vec, "${model}.msgpack"), "rb").read()
         obj = codec.decode(MsgPackReader(b))
@@ -118,7 +122,7 @@ function modelCall(model) {
 // Group models by namespace
 const groups = {};
 for (const model of models) {
-  const ns = modelNamespaces[model] || [];
+  const nsStr = modelNamespaces[model] || ""; const ns = nsStr ? nsStr.split(".") : [];
   const key = ns.length > 0 ? ns.join("_") : "_root";
   if (!groups[key]) groups[key] = [];
   groups[key].push(model);
@@ -153,20 +157,35 @@ from specodec.gron_writer import GronWriter
 const groupKeys = Object.keys(groups);
 const groupFuncNames = [];
 
+// Scalar-only file
+if (Object.keys(scalars).length > 0) {
+  let scalarBody = imports + "\n";
+  for (const [name, info] of Object.entries(scalars)) {
+    scalarBody += scalarFunc(name, info) + "\n";
+  }
+  scalarBody += `def run_scalars():\n`;
+  scalarBody += `    passed = 0\n    failed = 0\n`;
+  scalarBody += `    vec = os.environ["VEC_DIR"]\n    out = os.environ["OUT_DIR"]\n`;
+  scalarBody += `    os.makedirs(out, exist_ok=True)\n    os.makedirs(os.path.join(out, "scalars"), exist_ok=True)\n`;
+  scalarBody += "\n    # Scalar tests\n";
+  for (const [name] of Object.entries(scalars)) {
+    scalarBody += "    " + scalarCall(name) + "\n";
+  }
+  scalarBody += `    return passed, failed\n`;
+  const scalarFile = "test_scalars.py";
+  fs.writeFileSync(path.join(outDir, scalarFile), scalarBody);
+  groupFuncNames.push("run_scalars");
+  console.log(`Generated emit/${scalarFile} with ${Object.keys(scalars).length} scalars`);
+}
+
 for (const key of groupKeys) {
   const funcName = nsFuncName(key);
   groupFuncNames.push(funcName);
   const groupModels = groups[key];
-  const isRoot = key === "_root";
 
   let body = imports + "\n";
 
   // Function definitions
-  if (isRoot) {
-    for (const [name, info] of Object.entries(scalars)) {
-      body += scalarFunc(name, info) + "\n";
-    }
-  }
   for (const model of groupModels) {
     body += modelFunc(model) + "\n";
   }
@@ -175,14 +194,7 @@ for (const key of groupKeys) {
   body += `def ${funcName}():\n`;
   body += `    passed = 0\n    failed = 0\n`;
   body += `    vec = os.environ["VEC_DIR"]\n    out = os.environ["OUT_DIR"]\n`;
-  body += `    os.makedirs(out, exist_ok=True)\n    os.makedirs(os.path.join(out, "scalars"), exist_ok=True)\n`;
-
-  if (isRoot && Object.keys(scalars).length > 0) {
-    body += "\n    # Scalar tests\n";
-    for (const [name] of Object.entries(scalars)) {
-      body += "    " + scalarCall(name) + "\n";
-    }
-  }
+  body += `    os.makedirs(out, exist_ok=True)\n`;
 
   body += `\n    # Object tests\n`;
   for (const model of groupModels) {
@@ -193,7 +205,7 @@ for (const key of groupKeys) {
 
   const filePath = path.join(outDir, nsFileName(key));
   fs.writeFileSync(filePath, body);
-  console.log(`Generated emit/${nsFileName(key)} with ${isRoot ? Object.keys(scalars).length + " scalars + " : ""}${groupModels.length} models`);
+  console.log(`Generated emit/${nsFileName(key)} with ${groupModels.length} models`);
 }
 
 // Write main.py

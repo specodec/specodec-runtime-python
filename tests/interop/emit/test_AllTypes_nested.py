@@ -57,13 +57,12 @@ def test_model_nested_simple(vec, out):
         print("FAIL NestedSimple gron: " + str(e))
         failed += 1
     return passed, failed
-def run_nested():
+def run_AllTypes_nested():
     passed = 0
     failed = 0
     vec = os.environ["VEC_DIR"]
     out = os.environ["OUT_DIR"]
     os.makedirs(out, exist_ok=True)
-    os.makedirs(os.path.join(out, "scalars"), exist_ok=True)
 
     # Object tests
     p, f = test_model_nested_simple(vec, out); passed += p; failed += f
