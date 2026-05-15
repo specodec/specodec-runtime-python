@@ -7,7 +7,6 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const CACHE = join(__dir, ".tests-cache");
 const GENERATED = join(__dir, "src", "generated");
 const OUT_DIR = join(__dir, "output");
-const LANG_ROOT = join(__dir, "..", "..");
 
 function run(cmd) {
   console.log("  >", cmd);
@@ -51,8 +50,8 @@ console.log("\n=== Step 5: Run tests ===");
 if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true });
 ensure(OUT_DIR);
 
-// Install runtime from local source
-run(`cd ${__dir} && pip install -e ${LANG_ROOT} --break-system-packages`);
+// Fetch runtime from Forgejo PyPI
+run(`pip install --break-system-packages --index-url http://10.199.64.20:3000/api/packages/specodec/pypi/simple/ --trusted-host 10.199.64.20 specodec-runtime-python==1.0.0`);
 
 try { run(`cd ${__dir} && VEC_DIR=${VEC_DIR} OUT_DIR=${OUT_DIR} python emit/main.py`); } catch (e) { console.log("Python tests completed (some failures expected)"); }
 
